@@ -46,16 +46,16 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateLoop() {
-	lastid := 0
+	lastId := 0
 	nickname := "коть"
 	for {
-		lastid = Update(lastid, &nickname)
-		time.Sleep(5 * time.Second)
+		lastId = Update(lastId, &nickname)
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
-func Update(lastid int, nickname *string) int {
-	raw, err := http.Get(apiUrl + "/getUpdates?offset=" + strconv.Itoa(lastid))
+func Update(lastId int, nickname *string) int {
+	raw, err := http.Get(apiUrl + "/getUpdates?offset=" + strconv.Itoa(lastId))
 	if err != nil {
 		panic(err)
 	}
@@ -66,68 +66,115 @@ func Update(lastid int, nickname *string) int {
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Println(v)
+	
 	if len(v.Result) > 0 {
 		ev := v.Result[len(v.Result)-1]
 		txt := ev.Message.Text
 		txtmsg := SendMessage{
 			ChId:        ev.Message.Chat.Id,
-			Text:        "Обратись ко мне корректно! Меня зовут "+*nickname,
+			Text:        "Привет, я коть!",
 			Reply_to_id: ev.Message.Id,
 		}
 
-		if strings.Contains(strings.ToLower(txt), *nickname) {
-			if strings.Contains(strings.ToLower(txt), "дай гороскоп на деву") {
-				txtmsg = SendMessage{
-					ChId:        ev.Message.Chat.Id,
-					Text:        "Сегодня чудный день для исполнения своих мечт",
-					Reply_to_id: ev.Message.Id,
+		if strings.Split(txt, ", ")[0] == *nickname {
+			switch strings.Split(strings.Split(txt, ", ")[1], ": ")[0] {
+			case "расскажи анекдот":
+				{
+					return Haha(lastId, ev)
 				}
-			} else if strings.Contains(strings.ToLower(txt), "расскажи анекдот") {
-				txtmsg = SendMessage{
-					ChId:        ev.Message.Chat.Id,
-					Text:        "Колобок повесился",
-					Reply_to_id: ev.Message.Id,
+			case "дай предсказание на день":
+				{
+					return Predict(lastId, ev)
 				}
-			} else {
-				txtmsg = SendMessage{
-					ChId:        ev.Message.Chat.Id,
-					Text:        "Что нужно сделать?",
-					Reply_to_id: ev.Message.Id,
+			case "измени обращение на":
+				{
+					if strings.Contains(txt, ": ") {
+						return ChangeName(lastId, ev, txt)
+					} else {
+						fmt.Println(err)
+					}
 				}
-			}		
-		}
-
-
-		if strings.Contains(strings.ToLower(txt), "я хочу поменять обращение на") {
-			if len(strings.SplitAfter(txt, "я хочу поменять обращение на ")) > 1 {
-				*nickname = strings.SplitAfter(txt, "я хочу поменять обращение на ")[1]
-				txtmsg = SendMessage{
-					ChId:        ev.Message.Chat.Id,
-					Text:        "Теперь я "+*nickname,
-					Reply_to_id: ev.Message.Id,
-				}
-			} else {
-				txtmsg = SendMessage{
-					ChId:        ev.Message.Chat.Id,
-					Text:        "Нормально назови",
-					Reply_to_id: ev.Message.Id,
+			default:
+				{
+					txtmsg.Text = "Что нужно сделать?"
+					bytemsg, _ := json.Marshal(txtmsg)
+					_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+					if err != nil {
+						fmt.Println(err)
+						return lastId
+					} else {
+						return ev.Id + 1
+					}
 				}
 			}
-
 		}
+	}
+	return lastId
+}
 
-
-		bytemsg, _ := json.Marshal(txtmsg)
-				_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
-				if err != nil {
-					fmt.Println(err)
-					return lastid
-				} else {
-					return ev.Id + 1
-				}
-		
+func Predict(lastId int, ev UpdateStruct) int {
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Сегодня чудный день для исполнения своих мечт",
+		Reply_to_id: ev.Message.Id,
 	}
 
-	return lastid
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
 }
+
+func ChangeName(lastId int, ev UpdateStruct, txt string) int {
+	new := strings.Split(txt, "измени обращение на ")
+	nickname := new[1]
+	fmt.Println(nickname)
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Теперь я " + nickname,
+		Reply_to_id: ev.Message.Id,
+	}
+
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
+}
+
+func Haha(lastId int, ev UpdateStruct) int {
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Колобок повесился",
+		Reply_to_id: ev.Message.Id,
+	}
+
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
+}
+
+// func Ping() {
+// 	txtmsg := SendMessage{
+// 		ChId: 911850117,
+// 		Text:    "Страницу посетили.",
+// 	}
+
+// 	bytemsg, _ := json.Marshal(txtmsg)
+// 	_, err := http.Post(tgApiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
