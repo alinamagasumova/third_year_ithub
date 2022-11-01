@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,14 +12,28 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mattn/go-sqlite3"
 )
 
 const apiUrl = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
 
+// var nickname = "коть"
+
 func main() {
+	sql.Register("sqlite3_with_extensions",
+		&sqlite3.SQLiteDriver{
+			Extensions: []string{
+				"sqlite3_mod_regexp",
+			},
+		})
+
 	go UpdateLoop()
 	router := mux.NewRouter()
-	router.HandleFunc("/", IndexHandler)
+	router.HandleFunc("/api", IndexHandler)
+	router.HandleFunc("/botName", NameHandler)
+	router.HandleFunc("/eventId", EvIdHandler)
+	router.HandleFunc("/lastId", LastIdHandler)
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 	http.ListenAndServe("localhost:8080", router)
 }
 
@@ -35,7 +50,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	M.Result.Abilities = append(M.Result.Abilities, "Replying to message /privet", "test")
+	M.Result.Abilities = append(M.Result.Abilities, "Replying to messages", "test")
 
 	respReady, err := json.Marshal(M.Result)
 	if err != nil {
@@ -45,11 +60,78 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(respReady))
 }
 
+func NameHandler(w http.ResponseWriter, _ *http.Request) {
+	db, err := sql.Open("sqlite3", "db.sql")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+    var gotname string
+    var resp sql.NullString // для результата
+    err = db.QueryRow("SELECT name FROM bot_status").Scan(&resp)
+    if err != nil {
+        fmt.Println(err)
+    }
+    if resp.Valid { // если результат валид
+        gotname = resp.String // берём оттуда обычный string
+    }
+    w.Write([]byte(gotname))
+}
+
+func EvIdHandler(w http.ResponseWriter, _ *http.Request) {
+	db, err := sql.Open("sqlite3", "db.sql")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+    var goteventid string
+    var resp sql.NullString // для результата
+    err = db.QueryRow("SELECT id FROM bot_status").Scan(&resp)
+    if err != nil {
+        fmt.Println(err)
+    }
+    if resp.Valid { // если результат валид
+        goteventid = resp.String // берём оттуда обычный string
+    }
+    w.Write([]byte(goteventid))
+}
+
+func LastIdHandler(w http.ResponseWriter, _ *http.Request) {
+	db, err := sql.Open("sqlite3", "db.sql")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+    var gotlastid string
+    var resp sql.NullString // для результата
+    err = db.QueryRow("SELECT lastid FROM bot_status").Scan(&resp)
+    if err != nil {
+        fmt.Println(err)
+    }
+    if resp.Valid { // если результат валид
+        gotlastid = resp.String // берём оттуда обычный string
+    }
+    w.Write([]byte(gotlastid))
+}
+
 func UpdateLoop() {
+	db, err := sql.Open("sqlite3", "db.sql")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 	lastId := 0
-	nickname := "коть"
+	var nickname1 string
+	err = db.QueryRow(`select name from bot_status`).Scan(&nickname1)
+	if err != nil {
+        fmt.Println(err)
+    }
 	for {
-		lastId = Update(lastId, &nickname)
+		newId := Update(lastId, &nickname1)
+		if lastId != newId {
+			lastId = newId
+			db.Exec(`update bot_status set lastid = $1`, lastId)
+		}
 		time.Sleep(500 * time.Millisecond)
 	}
 }
@@ -66,17 +148,14 @@ func Update(lastId int, nickname *string) int {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(v)
-	
+
 	if len(v.Result) > 0 {
 		ev := v.Result[len(v.Result)-1]
 		txt := ev.Message.Text
-		txtmsg := SendMessage{
-			ChId:        ev.Message.Chat.Id,
-			Text:        "Привет, я коть!",
-			Reply_to_id: ev.Message.Id,
-		}
 
+		if strings.ToLower(txt) == "как тебя зовут?" {
+			return WAY(lastId, ev, nickname)
+		}
 		if strings.Split(txt, ", ")[0] == *nickname {
 			switch strings.Split(strings.Split(txt, ", ")[1], ": ")[0] {
 			case "расскажи анекдот":
@@ -90,14 +169,18 @@ func Update(lastId int, nickname *string) int {
 			case "измени обращение на":
 				{
 					if strings.Contains(txt, ": ") {
-						return ChangeName(lastId, ev, txt)
+						return ChangeName(lastId, ev, txt, nickname)
 					} else {
 						fmt.Println(err)
 					}
 				}
 			default:
 				{
-					txtmsg.Text = "Что нужно сделать?"
+					txtmsg := SendMessage{
+						ChId:        ev.Message.Chat.Id,
+						Text:        "Что нужно сделать?",
+						Reply_to_id: ev.Message.Id,
+					}
 					bytemsg, _ := json.Marshal(txtmsg)
 					_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
 					if err != nil {
@@ -130,13 +213,41 @@ func Predict(lastId int, ev UpdateStruct) int {
 	}
 }
 
-func ChangeName(lastId int, ev UpdateStruct, txt string) int {
-	new := strings.Split(txt, "измени обращение на ")
-	nickname := new[1]
-	fmt.Println(nickname)
+func ChangeName(lastId int, ev UpdateStruct, txt string, nickname *string) int {
+	new := strings.Split(txt, "измени обращение на: ")
+	*nickname = new[1]
+
+	db, err := sql.Open("sqlite3", "db.sql")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	result, err := db.Exec(`update bot_status set name = $1`, *nickname)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result.RowsAffected())
+	
 	txtmsg := SendMessage{
 		ChId:        ev.Message.Chat.Id,
-		Text:        "Теперь я " + nickname,
+		Text:        "Теперь я " + *nickname,
+		Reply_to_id: ev.Message.Id,
+	}
+
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err = http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
+}
+
+func WAY(lastId int, ev UpdateStruct, nickname *string) int {
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Я " + *nickname,
 		Reply_to_id: ev.Message.Id,
 	}
 
@@ -149,7 +260,6 @@ func ChangeName(lastId int, ev UpdateStruct, txt string) int {
 		return ev.Id + 1
 	}
 }
-
 func Haha(lastId int, ev UpdateStruct) int {
 	txtmsg := SendMessage{
 		ChId:        ev.Message.Chat.Id,
@@ -166,15 +276,3 @@ func Haha(lastId int, ev UpdateStruct) int {
 		return ev.Id + 1
 	}
 }
-
-// func Ping() {
-// 	txtmsg := SendMessage{
-// 		ChId: 911850117,
-// 		Text:    "Страницу посетили.",
-// 	}
-
-// 	bytemsg, _ := json.Marshal(txtmsg)
-// 	_, err := http.Post(tgApiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
