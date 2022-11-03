@@ -17,8 +17,6 @@ import (
 
 const apiUrl = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
 
-// var nickname = "коть"
-
 func main() {
 	sql.Register("sqlite3_with_extensions",
 		&sqlite3.SQLiteDriver{
@@ -33,6 +31,8 @@ func main() {
 	router.HandleFunc("/botName", NameHandler)
 	router.HandleFunc("/eventId", EvIdHandler)
 	router.HandleFunc("/lastId", LastIdHandler)
+	router.HandleFunc("/login", Login)
+	router.HandleFunc("/register", Register)
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 	http.ListenAndServe("localhost:8080", router)
 }
@@ -79,21 +79,33 @@ func NameHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func EvIdHandler(w http.ResponseWriter, _ *http.Request) {
-	db, err := sql.Open("sqlite3", "db.sql")
-    if err != nil {
-        panic(err)
-    }
-    defer db.Close()
-    var goteventid string
-    var resp sql.NullString // для результата
-    err = db.QueryRow("SELECT id FROM bot_status").Scan(&resp)
-    if err != nil {
-        fmt.Println(err)
-    }
-    if resp.Valid { // если результат валид
-        goteventid = resp.String // берём оттуда обычный string
-    }
-    w.Write([]byte(goteventid))
+	// db, err := sql.Open("sqlite3", "db.sql")
+    // if err != nil {
+    //     panic(err)
+    // }
+    // defer db.Close()
+    // var goteventid string
+    // var resp sql.NullString // для результата
+    // err = db.QueryRow("SELECT id FROM bot_status").Scan(&resp)
+    // if err != nil {
+    //     fmt.Println(err)
+    // }
+    // if resp.Valid { // если результат валид
+    //     goteventid = resp.String // берём оттуда обычный string
+    // }
+    // w.Write([]byte(goteventid))
+}
+
+func AuthCheck(w http.ResponseWriter, _ *http.Request) {
+
+}
+
+func Login(w http.ResponseWriter, _ *http.Request) {
+	
+}
+
+func Register(w http.ResponseWriter, _ *http.Request) {
+
 }
 
 func LastIdHandler(w http.ResponseWriter, _ *http.Request) {
