@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,20 +64,20 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func NameHandler(w http.ResponseWriter, _ *http.Request) {
 	db, err := sql.Open("sqlite3", "db.sql")
-    if err != nil {
-        panic(err)
-    }
-    defer db.Close()
-    var gotname string
-    var resp sql.NullString // для результата
-    err = db.QueryRow("SELECT name FROM bot_status").Scan(&resp)
-    if err != nil {
-        fmt.Println(err)
-    }
-    if resp.Valid { // если результат валид
-        gotname = resp.String // берём оттуда обычный string
-    }
-    w.Write([]byte(gotname))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	var gotname string
+	var resp sql.NullString // для результата
+	err = db.QueryRow("SELECT name FROM bot_status").Scan(&resp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if resp.Valid { // если результат валид
+		gotname = resp.String // берём оттуда обычный string
+	}
+	w.Write([]byte(gotname))
 }
 
 // func EvIdHandler(w http.ResponseWriter, _ *http.Request) {
@@ -100,30 +102,115 @@ func AuthCheck(w http.ResponseWriter, _ *http.Request) {
 
 }
 
-func Login(w http.ResponseWriter, _ *http.Request) {
-	
+func Login(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	var data UserLogin
+	err = json.Unmarshal(reqBody, &data)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	db, err := sql.Open("sqlite3", "db.sql")
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("INTERNAL DATABASE ERROR"))
+	}
+	defer db.Close()
+	var password string
+	err = db.QueryRow("select password from admins where username = ?", data.Username).Scan(&password)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("INTERNAL DATABASE ERROR"))
+		} else {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusConflict)
+			w.Write([]byte("NO SUCH USER"))
+		}
+	}
+	hash := md5.Sum([]byte(data.Password))
+	hashPass := hex.EncodeToString(hash[:])
+	if hashPass == password {
+		fmt.Println("user is ok")
+	} else {
+		fmt.Println("password is not correct")
+	}
 }
 
-func Register(w http.ResponseWriter, _ *http.Request) {
-	fmt.Println("register requested")
+func Register(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	var data UserLogin
+	err = json.Unmarshal(reqBody, &data)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	db, err := sql.Open("sqlite3", "db.sql")
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("INTERNAL DATABASE ERROR"))
+	}
+	defer db.Close()
+
+	rows, err := db.Query("select id from admins where username = ?", data.Username)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("INTERNAL DATABASE ERROR"))
+	}
+
+	if rows.Next() {
+		fmt.Println("User already exists")
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte("USER EXISTS"))
+	} else {
+		hash := md5.Sum([]byte(data.Password))
+		hashString := hex.EncodeToString(hash[:])
+		_, err = db.Exec("INSERT INTO admins (username, password) VALUES (?, ?)", data.Username, hashString)
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("INTERNAL DATABASE ERROR"))
+		}
+	}
+
 }
 
 func LastIdHandler(w http.ResponseWriter, _ *http.Request) {
 	db, err := sql.Open("sqlite3", "db.sql")
-    if err != nil {
-        panic(err)
-    }
-    defer db.Close()
-    var gotlastid string
-    var resp sql.NullString // для результата
-    err = db.QueryRow("SELECT lastid FROM bot_status").Scan(&resp)
-    if err != nil {
-        fmt.Println(err)
-    }
-    if resp.Valid { // если результат валид
-        gotlastid = resp.String // берём оттуда обычный string
-    }
-    w.Write([]byte(gotlastid))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	var gotlastid string
+	var resp sql.NullString // для результата
+	err = db.QueryRow("SELECT lastid FROM bot_status").Scan(&resp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if resp.Valid { // если результат валид
+		gotlastid = resp.String // берём оттуда обычный string
+	}
+	w.Write([]byte(gotlastid))
 }
 
 func UpdateLoop() {
@@ -136,8 +223,8 @@ func UpdateLoop() {
 	var nickname1 string
 	err = db.QueryRow(`select name from bot_status`).Scan(&nickname1)
 	if err != nil {
-        fmt.Println(err)
-    }
+		fmt.Println(err)
+	}
 	for {
 		newId := Update(lastId, &nickname1)
 		if lastId != newId {
@@ -239,7 +326,7 @@ func ChangeName(lastId int, ev UpdateStruct, txt string, nickname *string) int {
 		panic(err)
 	}
 	fmt.Println(result.RowsAffected())
-	
+
 	txtmsg := SendMessage{
 		ChId:        ev.Message.Chat.Id,
 		Text:        "Теперь я " + *nickname,

@@ -50,38 +50,50 @@
             <input type="text" name="text" id="username" placeholder="username"><br/>
             <label for="password">Пароль</label>
             <input type="password" name="text" id="password" placeholder="password"><br/>
-            <input type="submit" value="Send" class="btn">
+            <input type="submit" value="Register" class="btn" onclick="Register()">
+            <input type="submit" value="Login" class="btn" onclick="Login()">
         </div>
            
     </form>
     </div>
 <script>
     function Register() {
-        resp = ("/register").then((response)=>{
-            let userData = {
-                username: document.getElementById("username"),
-                password: document.getElementById("password")
-            }
-            JSON.stringify(userData);
-            xhr = new XMLHttpRequest();
-            xhr.open('POST', '/login');
-            xhr.setRequestHeader("content-type", "application/json")
-        })
-        console.log('ok')
+        const userData = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        }
+        console.log(userData)
+        const json = JSON.stringify(userData);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/register');
+        xhr.setRequestHeader("content-type", "application/json")
+        xhr.send(json)
+    }
+
+    function Login() {
+        const userData = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        }
+        console.log(userData)
+        const json = JSON.stringify(userData);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/login');
+        xhr.setRequestHeader("content-type", "application/json")
+        xhr.send(json)
     }
 
     let form = document.forms[0];
-    form.addEventListener('submit', (e)=>{
+      form.addEventListener('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        let text = e.target.text.value;
+        let text = e.target.password.value + e.target.username.value;
         if (text != "") {
-            alert("Thank you!")
+          alert("Thank you!")
         } else {
-            alert("Please enter something!")
+          alert("Please enter something!")
         }
-
-    })
+      })
 </script>
 </body>
 </html>

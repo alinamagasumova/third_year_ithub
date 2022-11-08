@@ -54,3 +54,8 @@ type UpdateResponse struct {
 	Ok     bool           `json:"ok"`
 	Result []UpdateStruct `json:"result"`
 }
+
+type UserLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
