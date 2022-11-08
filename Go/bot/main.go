@@ -63,7 +63,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func NameHandler(w http.ResponseWriter, _ *http.Request) {
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +81,7 @@ func NameHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 // func EvIdHandler(w http.ResponseWriter, _ *http.Request) {
-// 	db, err := sql.Open("sqlite3", "db.sql")
+// 	db, err := sql.Open("sqlite3", "sql.db")
 //     if err != nil {
 //         panic(err)
 //     }
@@ -118,7 +118,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("BAD REQUEST"))
 	}
 
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -163,7 +163,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("BAD REQUEST"))
 	}
 
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -192,11 +192,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("INTERNAL DATABASE ERROR"))
 		}
 	}
-
 }
 
 func LastIdHandler(w http.ResponseWriter, _ *http.Request) {
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		panic(err)
 	}
@@ -214,7 +213,7 @@ func LastIdHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func UpdateLoop() {
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		panic(err)
 	}
@@ -316,7 +315,7 @@ func ChangeName(lastId int, ev UpdateStruct, txt string, nickname *string) int {
 	new := strings.Split(txt, "измени обращение на: ")
 	*nickname = new[1]
 
-	db, err := sql.Open("sqlite3", "db.sql")
+	db, err := sql.Open("sqlite3", "sql.db")
 	if err != nil {
 		panic(err)
 	}
@@ -359,6 +358,7 @@ func WAY(lastId int, ev UpdateStruct, nickname *string) int {
 		return ev.Id + 1
 	}
 }
+
 func Haha(lastId int, ev UpdateStruct) int {
 	txtmsg := SendMessage{
 		ChId:        ev.Message.Chat.Id,
