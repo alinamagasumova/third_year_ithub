@@ -59,3 +59,21 @@ type UserLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type ChatInfo struct {
+	Id    int
+	Name  string
+	Size  int
+	Owner int
+}
+
+type ChatMember struct {
+	User        User   `json:"user"`
+	IsAnonymous bool   `json:"is_anonymous"`
+	Status      string `json:"status"`
+}
+
+type ChatMembersResponse struct {
+	Ok     bool         `json:"ok"`
+	Result []ChatMember `json:"result"`
+}

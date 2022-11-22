@@ -17,6 +17,7 @@ import (
 )
 
 const apiUrl = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
+var idcache map[int]ChatInfo = make(map[int]ChatInfo)
 
 func connectDb() *sql.DB {
 	connstr := fmt.Sprintf("user=postgres port=5432 password=123 dbname=postgres sslmode=disable")
@@ -31,7 +32,9 @@ func connectDb() *sql.DB {
 }
 
 func main() {
+	initCache()
 	go UpdateLoop()
+	go initiateNats()
 	router := mux.NewRouter()
 	router.HandleFunc("/api", IndexHandler)
 	router.HandleFunc("/botName", NameHandler)
