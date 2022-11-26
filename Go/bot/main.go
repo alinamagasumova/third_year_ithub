@@ -17,7 +17,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const apiUrl = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
+const (
+	port     = 5432
+	user     = "postgres"
+	password = "123"
+	dbname   = "postgres"
+	apiUrl   = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
+)
 
 var idcache map[int]ChatInfo = make(map[int]ChatInfo)
 
@@ -131,11 +137,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := connectDb()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	w.Write([]byte("INTERNAL DATABASE ERROR"))
-	// }
 	defer db.Close()
 
 	rows, err := db.Query("select id from admins where username = ?", data.Username)
@@ -339,7 +340,7 @@ func Haha(lastId int, ev UpdateStruct) int {
 }
 
 func connectDb() *sql.DB {
-	connstr := "user=postgres port=5432 password=123 dbname=postgres sslmode=disable"
+	connstr := fmt.Sprintf("user=%s port=%d password=%s dbname=%s sslmode=disable", user, port, password, dbname)
 	conn, err := sql.Open("postgres", connstr)
 	if err != nil {
 		panic(err)
