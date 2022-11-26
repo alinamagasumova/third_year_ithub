@@ -79,5 +79,4 @@ func addToCache(id int) {
 	defer db.Close()
 
 	db.Exec("INSERT INTO groups VALUES (?,?,?,?)", temp.Id, temp.Name, temp.Size, temp.Owner)
-
 }
