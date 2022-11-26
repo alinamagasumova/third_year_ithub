@@ -14,22 +14,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 const apiUrl = "https://api.telegram.org/" + "bot5593551307:AAH4knPtYPOsgu9SkvEXmJ5C4UoeifqY6Io"
-var idcache map[int]ChatInfo = make(map[int]ChatInfo)
 
-func connectDb() *sql.DB {
-	connstr := fmt.Sprintf("user=postgres port=5432 password=123 dbname=postgres sslmode=disable")
-	conn, err := sql.Open("postgres", connstr)
-	if err != nil {
-		panic(err)
-	}
-	if conn == nil {
-		panic("db nil")
-	}
-	return conn
-}
+var idcache map[int]ChatInfo = make(map[int]ChatInfo)
 
 func main() {
 	initCache()
@@ -83,27 +73,6 @@ func NameHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte(gotname))
 }
 
-// func EvIdHandler(w http.ResponseWriter, _ *http.Request) {
-// 	db, err := sql.Open("postgres", connStr)
-//     if err != nil {
-//         panic(err)
-//     }
-//     defer db.Close()
-//     var goteventid string
-//     var resp sql.NullString // для результата
-//     err = db.QueryRow("SELECT id FROM bot_status").Scan(&resp)
-//     if err != nil {
-//         fmt.Println(err)
-//     }
-//     if resp.Valid { // если результат валид
-//         goteventid = resp.String // берём оттуда обычный string
-//     }
-//     w.Write([]byte(goteventid))
-// }
-
-// func AuthCheck(w http.ResponseWriter, _ *http.Request) {
-// }
-
 func Login(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -121,11 +90,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := connectDb()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	w.Write([]byte("INTERNAL DATABASE ERROR"))
-	// }
 	defer db.Close()
 	var password string
 	err = db.QueryRow("select password from admins where username = ?", data.Username).Scan(&password)
@@ -367,4 +331,16 @@ func Haha(lastId int, ev UpdateStruct) int {
 	} else {
 		return ev.Id + 1
 	}
+}
+
+func connectDb() *sql.DB {
+	connstr := "user=postgres port=5432 password=123 dbname=postgres sslmode=disable"
+	conn, err := sql.Open("postgres", connstr)
+	if err != nil {
+		panic(err)
+	}
+	if conn == nil {
+		panic("db nil")
+	}
+	return conn
 }
