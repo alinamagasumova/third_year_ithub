@@ -8,8 +8,8 @@ import (
 )
 
 type NatsAd struct {
-	Msg  string `json: "msg"`
-	Time int64  `json: "time"`
+	Msg  string `json:"msg"`
+	Time int64  `json:"time"`
 }
 
 func initiateNats() {

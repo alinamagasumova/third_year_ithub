@@ -9,7 +9,6 @@ import (
 )
 
 func checkCache(id int) bool {
-
 	if _, ok := idcache[id]; !ok {
 		return false
 	}

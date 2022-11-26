@@ -25,6 +25,7 @@ func main() {
 	initCache()
 	go UpdateLoop()
 	go initiateNats()
+	go cronProccess()
 	router := mux.NewRouter()
 	router.HandleFunc("/api", IndexHandler)
 	router.HandleFunc("/botName", NameHandler)
@@ -210,6 +211,10 @@ func Update(lastId int, nickname *string) int {
 	if len(v.Result) > 0 {
 		ev := v.Result[len(v.Result)-1]
 		txt := ev.Message.Text
+
+		if !checkCache(ev.Message.Chat.Id) {
+			addToCache(ev.Message.Chat.Id)
+		}
 
 		if strings.ToLower(txt) == "как тебя зовут?" {
 			return WAY(lastId, ev, nickname)
