@@ -1,5 +1,55 @@
-<h2>Здравствуйте, пожалуйста ознакомьтесь с правилами ниже</h2>
-<p>Вы можете отправить запрос вида: http://localhost:8080/ЧИСЛО/news/for/КАТЕГОРИЯ</p>
-<p>Где вместо КАТЕГОРИЯ могут стоять значения: business, economic, finances, politics, а вместо ЧИСЛО - целое положительное число.</p>
-<p>Этот запрос читается как "Дай СТОЛЬКО-ТО новостей из КАТЕГОРИЯ"</p>
-<p>Например: http://localhost:8080/10/news/for/business (дай 10 новостей из категории Бизнес).</p>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная</title>
+    <style>
+        .box {
+            align-items: center;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            text-align: center;
+            flex-direction: column;
+            font-family: san-serif;
+        }
+        button {
+            margin-top: 1rem;
+        }
+        input {
+            margin-right: 1rem;
+            width: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+    <h3>Выберите новости для просмотра</h3>
+    <form>
+    <label for="count">Количество</label>
+    <input name="count" id="cnt" type="number" value="1" min="1"/>
+
+    <label for="cat">Категория</label>
+        <select name="cat" id="cat">
+            <option value="business">Бизнес</option>
+            <option value="economics">Экономика</option>
+            <option value="politics">Политика</option>
+            <option value="finances">Финансы</option>
+        </select>
+<br/>
+    <button type="submit">Читать</button>
+    </form>
+    </div>
+
+    <script>
+        document.forms[0].addEventListener('submit', (e) => {
+            e.preventDefault()
+            const cat = document.getElementById("cat").value.toLowerCase();
+            const cnt = document.getElementById("cnt").value;
+            window.location.pathname = `./${cnt}/news/for/${cat}`;
+        });
+    </script>
+</body>
+</html>

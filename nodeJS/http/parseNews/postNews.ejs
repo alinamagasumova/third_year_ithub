@@ -1,14 +1,52 @@
-<% let lastD = items.length.toString().slice(-1) %> 
-<% if(lastD == 1 && items.length != 11){ %>
-    <h3><%= items.length %> последняя новость в категории <%= cat %></h3>
-<% }else if ((lastD == 2 || lastD == 3) && items.length!=12 && items.length!=13){ %>
-    <h3><%= items.length %> последние новости в категории <%= cat %></h3>
-<% }else{ %>
-    <h3><%= items.length %> последних новостей в категории <%= cat %></h3>
-<% } %>
-<dl>
- <% items.forEach((item, i) => { %>
-    <dt>Новость <%= ++i %></dt>
-    <dd><%= item.title %></dd>
- <% }) %>
-</dl>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новости</title>
+    <style>
+        .box {
+            margin: 0;
+            padding: 2rem;
+            text-align: center;
+            font-family: san-serif;
+        }
+        dt {
+            margin: 1rem;
+        }
+        dl {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .item {
+            padding: 1rem;
+            background-color: bisque;
+            border-radius: .5rem;
+            width: 50%;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <% let lastD = items.length.toString().slice(-1) %> 
+        <% if(lastD == 1 && items.length != 11){ %>
+            <h2><%= items.length %> последняя новость в категории <%= cat %></h2>
+        <% }else if ((lastD == 2 || lastD == 3) && items.length!=12 && items.length!=13){ %>
+            <h2><%= items.length %> последние новости в категории <%= cat %></h2>
+        <% }else{ %>
+            <h2><%= items.length %> последних новостей в категории <%= cat %></h2>
+        <% } %>
+        <dl>
+        <% items.forEach((item, i) => { %>
+            <div class="item">
+                <dt>Новость <%= ++i %></dt>
+                <dd><%= item.title %></dd>
+            </div>
+        <% }) %>
+        </dl>
+    </div>
+</body>
+</html>
