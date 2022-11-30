@@ -1,0 +1,14 @@
+<% let lastD = items.length.toString().slice(-1) %> 
+<% if(lastD == 1 && items.length != 11){ %>
+    <h3><%= items.length %> последняя новость в категории <%= cat %></h3>
+<% }else if ((lastD == 2 || lastD == 3) && items.length!=12 && items.length!=13){ %>
+    <h3><%= items.length %> последние новости в категории <%= cat %></h3>
+<% }else{ %>
+    <h3><%= items.length %> последних новостей в категории <%= cat %></h3>
+<% } %>
+<dl>
+ <% items.forEach((item, i) => { %>
+    <dt>Новость <%= ++i %></dt>
+    <dd><%= item.title %></dd>
+ <% }) %>
+</dl>
