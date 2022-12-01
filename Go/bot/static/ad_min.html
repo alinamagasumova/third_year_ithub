@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 0;
+            padding: 0;
+        }
+        .box {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .dashedBox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60%;
+            width: 60%;
+            box-sizing: border-box;
+            overflow: auto;
+            border-radius: 2rem;
+            border-style: dashed;
+        }
+        label {
+            margin-bottom: .5rem;
+            margin-top: 1rem;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="dashedBox">
+            <h1>ADMIN WANTS TO SEND A MSG</h1>
+            <form>
+                <label for="msgText">Msg data:</label>
+                <textarea id="msgText" cols="32" rows="7"></textarea>
+
+                <label for="post-time">Post time:</label>
+                <input type="datetime-local" id="post-time">
+            </form>
+        </div>
+    </div>
+<script>
+    const tzoffset = new Date().getTimezoneOffset() * 60000;
+    const currTextTime = new Date(Date.now() - tzoffset).toISOString().slice(0, -8);
+    
+    document.getElementById('post-time').value = currTextTime;
+    document.getElementById('post-time').min = currTextTime;
+
+    function sendAd() {
+        const timestamp = new Date(document.getElementById("post-time").value);
+        const adData = {
+            msg: document.getElementById("msgText").value,
+            time: Math.round(timestamp.getTime()/1000)
+        }
+        const json = JSON.stringify(adData);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/postAd');
+        xhr.setRequestHeader("content-type", "application/json")
+        xhr.send(json)
+    }
+</script>
+</body>
+</html>

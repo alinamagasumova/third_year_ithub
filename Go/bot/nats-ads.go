@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/nats-io/nats.go"
 )
@@ -27,4 +30,31 @@ func initiateNats() {
 		defer db.Close()
 		db.Exec("insert into ads.msg, ads.time VALUES (?,?)", receivedMessage.Msg, receivedMessage.Time)
 	})
+}
+
+func PostAdHandler(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	var inData NatsAd
+	err = json.Unmarshal(reqBody, &inData)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("BAD REQUEST"))
+	}
+
+	outData, err := json.Marshal(inData)
+	if err!=nil {fmt.Println(err)}
+
+	nc, _ := nats.Connect("nats://95.165.107.100:4222")
+	defer nc.Drain(
+
+	)
+	nc.Publish("ith.bot.ads", outData)
+
 }
