@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Chat</title>
+</head>
+<body>
+    <div class="box">
+        <div class="info">
+            <p class="h">Chat: control point</p>
+            <p class="infoText"></p>
+        </div>
+        <div class="chatBody"></div>
+        <form>
+            <input type="text" name="msg" id="msg" placeholder="enter your message">
+            <button type="submit">Send</button>
+            <button type="button" onclick="socket.emit('giveInfo')">Info</button>
+        </form>
+    </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io()
+    const chBody = document.querySelector('.chatBody');
+    const infoText = document.querySelector('.infoText');
+    document.forms[0].addEventListener('submit', (e) => {
+        e.preventDefault();
+        socket.emit('msg', document.querySelector('#msg').value)
+        document.querySelector('#msg').value=''
+    });
+
+    socket.on('getInfo', users => {
+        if(Object.keys(users).length>1){
+            chBody.innerHTML += `<p class="pink">In the chat:</p>`;
+            for(let key in users) {
+                chBody.lastElementChild.innerText += ' '+users[key]+';';
+            };
+        } else {
+            chBody.innerHTML += `<p class="pink">There is no one in the chat</p>`;
+        }
+    })
+
+    socket.on('hello', users => {
+        let name = prompt('Please enter your name');
+        if (name) {
+            if(Object.keys(users).length>0){
+                chBody.innerHTML += `<p class="pink nm">Welcome! Already in the chat:</p>`;
+                for(let key in users) {
+                    chBody.firstElementChild.innerText += ' '+users[key]+';';
+                };
+            } else {
+                chBody.innerHTML = `<p class="pink nm">Welcome! You are first in the chat. </p>`
+            }
+            socket.emit('user', name)
+            infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+        } else {
+            alert('Enter name')
+        }
+    })
+
+    socket.on('join', users => {
+        let i = Object.keys(users).length-1
+        let name = users[Object.keys(users)[i]];
+        chBody.innerHTML += `<p class="gray">${name} has joined</p>`
+        infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+    })
+
+    socket.on('message', msg => {
+        chBody.innerHTML += `<p>${msg[0]}: ${msg[1]}</p>`
+    })
+
+    window.onunload = () => socket.disconnect()
+    socket.on('close', gone => {
+        chBody.innerHTML += `<p class="gray">${gone} has left</p>`
+        infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+    });
+</script>
+</body>
+</html>
