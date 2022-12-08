@@ -1,0 +1,9 @@
+npm install -g express-generator
+express --view=ejs myapp
+npm install
+npm start
+
+npm install --save mongoose
+npm install --save nodemon
+npm install --save ejs-local
+npm install --save express-session

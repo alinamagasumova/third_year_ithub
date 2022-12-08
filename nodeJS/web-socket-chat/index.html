@@ -75,7 +75,7 @@
     window.onunload = () => socket.disconnect()
     socket.on('close', gone => {
         chBody.innerHTML += `<p class="gray">${gone} has left</p>`
-        infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+        infoText.innerHTML = `Online: ${Object.keys(users).length-1}`
     });
 </script>
 </body>

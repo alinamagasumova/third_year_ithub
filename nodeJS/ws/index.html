@@ -1,0 +1,11 @@
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io()
+    socket.on('message', data => alert(data));
+    socket.emit('message', 'I am Safari browser');
+    socket.on('for-all', data => alert(data));
+    socket.on('hello', data => alert(data));
+
+    window.onunload = () => socket.disconnect()
+    socket.on('close', data => alert(data));
+</script>
