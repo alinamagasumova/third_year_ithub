@@ -19,13 +19,20 @@ body {
     font-weight: 600;
     /* font-family: cursive; */
 }
-.infoText {
+.infoText, .nickname {
     font-size: 12px;
     color: rgb(240, 240, 240);
     margin: 10px 0 0 0;
 }
 .box {
     height: 100%;
+}
+.red {
+    background-color: rgba(193, 47, 47, 0.5);
+}
+.user {
+    padding: 5px;
+    border-radius: 4px;
 }
 .nm {
     margin-top: 0;

@@ -11,11 +11,15 @@
     <div class="box">
         <div class="info">
             <p class="h">Chat: control point</p>
-            <p class="infoText"></p>
+            <div style="display: flex;">    
+                <p class="infoText" style="margin-right: 5px;"></p>
+                <p class="nickname"></p>
+            </div>
+
         </div>
         <div class="chatBody"></div>
         <form>
-            <input type="text" name="msg" id="msg" placeholder="enter your message">
+            <input type="text" name="msg" data-name="all" id="msg" placeholder="enter your message" data-id="">
             <button type="submit">Send</button>
             <button type="button" onclick="socket.emit('giveInfo')">Info</button>
         </form>
@@ -23,20 +27,42 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io()
-    const chBody = document.querySelector('.chatBody');
-    const infoText = document.querySelector('.infoText');
+    const socket = io(),
+    chBody = document.querySelector('.chatBody'),
+    infoText = document.querySelector('.infoText'),
+    inp = document.querySelector('#msg'),
+    nickname = document.querySelector('.nickname');
     document.forms[0].addEventListener('submit', (e) => {
         e.preventDefault();
-        socket.emit('msg', document.querySelector('#msg').value)
-        document.querySelector('#msg').value=''
+        if (inp.dataset.name == 'all'){
+            socket.emit('msg', inp.value)
+        } else {
+            socket.emit('private', {recId: inp.dataset.id, text: inp.value})
+            chBody.innerHTML += `<p class='red user'>You to ${inp.dataset.name}: ${inp.value}</p>`
+        }
+       inp.value=''
     });
+
+    function sendPrivate(id, name) {
+        if (inp.dataset.name=='all') {
+            inp.dataset.name = name;
+            inp.dataset.id = id;
+            inp.placeholder = 'enter your message TO '+name;  
+        } else {
+            inp.dataset.name = 'all';
+            inp.value='';
+            inp.dataset.id = '';
+            inp.placeholder = 'enter your message';
+        }
+    }
 
     socket.on('getInfo', users => {
         if(Object.keys(users).length>1){
             chBody.innerHTML += `<p class="pink">In the chat:</p>`;
             for(let key in users) {
-                chBody.lastElementChild.innerText += ' '+users[key]+';';
+                if (users[socket.id][0] !== users[key][0]) {
+                    chBody.lastElementChild.innerHTML += ` <span onclick="sendPrivate('${key}', '${users[key][0]}')">${users[key][0]};</span>`;
+                }
             };
         } else {
             chBody.innerHTML += `<p class="pink">There is no one in the chat</p>`;
@@ -45,37 +71,51 @@
 
     socket.on('hello', users => {
         let name = prompt('Please enter your name');
-        if (name) {
+        let color = prompt('Choose the color and enter the digit: 0-"no color", 1-"green", 2-"brown", 3-"blue", 4-"gray', 0)
+        if (name && color<=4 && color>=0) {
             if(Object.keys(users).length>0){
                 chBody.innerHTML += `<p class="pink nm">Welcome! Already in the chat:</p>`;
                 for(let key in users) {
-                    chBody.firstElementChild.innerText += ' '+users[key]+';';
+                    chBody.firstElementChild.innerText += ' '+users[key][0]+';';
                 };
             } else {
                 chBody.innerHTML = `<p class="pink nm">Welcome! You are first in the chat. </p>`
             }
-            socket.emit('user', name)
-            infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+            switch (color){
+                case "1": color='rgba(82, 144, 82, 0.5)'; break;
+                case "2": color='rgba(146, 115, 74, 0.5)'; break;
+                case "3": color='rgba(79, 79, 157, 0.5)'; break;
+                case "4": color='rgba(0, 0, 0, 0.5)'; break;
+                default: color=''; break;
+            }
+            chBody.innerHTML += `<p class="gray">You can send private messages clicking on Info button and choosing the receipent. If you want to send message to everyone again, click on any name in info p.</p>`;
+            socket.emit('user', {name: name, color: color})
+            infoText.innerText = `Online: ${Object.keys(users).length+1}`
+            nickname.innerText = `Nickname: ${name}`
         } else {
-            alert('Enter name')
+            alert('Enter name or color')
         }
     })
 
     socket.on('join', users => {
         let i = Object.keys(users).length-1
-        let name = users[Object.keys(users)[i]];
+        let name = users[Object.keys(users)[i]][0];
         chBody.innerHTML += `<p class="gray">${name} has joined</p>`
-        infoText.innerHTML = `Online: ${Object.keys(users).length+1}`
+        infoText.innerHTML = `Online: ${Object.keys(users).length}`
     })
 
     socket.on('message', msg => {
-        chBody.innerHTML += `<p>${msg[0]}: ${msg[1]}</p>`
+        chBody.innerHTML += `<p class="user" style='background-color: ${msg[1]}'>${msg[0]}: ${msg[2]}</p>`
+    })
+    
+    socket.on('privateMsg', msg => {
+        chBody.innerHTML += `<p class='red user'>${msg.adName} to you: ${msg.text}</p>`
     })
 
     window.onunload = () => socket.disconnect()
     socket.on('close', gone => {
-        chBody.innerHTML += `<p class="gray">${gone} has left</p>`
-        infoText.innerHTML = `Online: ${Object.keys(users).length-1}`
+        chBody.innerHTML += `<p class="gray">${gone.man[0]} has left</p>`
+        infoText.innerHTML = `Online: ${gone.len-1}`
     });
 </script>
 </body>
