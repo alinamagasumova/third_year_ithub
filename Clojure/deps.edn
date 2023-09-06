@@ -1,0 +1,4 @@
+;; специальный конфг файл. зависимости тут
+{:deps 
+ {org.clojure/core.match {:mvn/version "1.0.1"}
+  defun/defun {:mvn/version "0.3.1"}}}

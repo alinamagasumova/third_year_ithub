@@ -86,3 +86,37 @@ func Haha(lastId int, ev UpdateStruct) int {
 		return ev.Id + 1
 	}
 }
+
+func FeedBack(lastId int, ev UpdateStruct, feedBack string) int {
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Спасибо за обратную связь!",
+		Reply_to_id: ev.Message.Id,
+	}
+	fmt.Println(feedBack)
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
+}
+
+func Bye(lastId int, ev UpdateStruct) int {
+	txtmsg := SendMessage{
+		ChId:        ev.Message.Chat.Id,
+		Text:        "Подожди, оставь пожалуйста отзыв на мою работу! Начни сообщение с \"отзыв: \"",
+		Reply_to_id: ev.Message.Id,
+	}
+
+	bytemsg, _ := json.Marshal(txtmsg)
+	_, err := http.Post(apiUrl+"/sendMessage", "application/json", bytes.NewReader(bytemsg))
+	if err != nil {
+		fmt.Println(err)
+		return lastId
+	} else {
+		return ev.Id + 1
+	}
+}

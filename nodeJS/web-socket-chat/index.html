@@ -111,7 +111,7 @@
     socket.on('privateMsg', msg => {
         chBody.innerHTML += `<p class='red user'>${msg.adName} to you: ${msg.text}</p>`
     })
-
+    
     window.onunload = () => socket.disconnect()
     socket.on('close', gone => {
         chBody.innerHTML += `<p class="gray">${gone.man[0]} has left</p>`

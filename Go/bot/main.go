@@ -31,7 +31,7 @@ func main() {
 	initCache()
 	go UpdateLoop()
 	go initiateNats()
-	go cronProccess()
+	// go cronProccess()
 	router := mux.NewRouter()
 	router.HandleFunc("/api", IndexHandler)
 	router.HandleFunc("/botName", NameHandler)
@@ -221,6 +221,11 @@ func Update(lastId int, nickname *string) int {
 		if strings.ToLower(txt) == "как тебя зовут?" {
 			return WAY(lastId, ev, nickname)
 		}
+
+		if strings.Split(txt, ": ")[0] == "отзыв" {
+			feedBack := strings.Split(txt, ": ")[1]
+			return FeedBack(lastId, ev, feedBack)
+		}
 		if strings.Split(txt, ", ")[0] == *nickname {
 			switch strings.Split(strings.Split(txt, ", ")[1], ": ")[0] {
 			case "расскажи анекдот":
@@ -230,6 +235,10 @@ func Update(lastId int, nickname *string) int {
 			case "дай предсказание на день":
 				{
 					return Predict(lastId, ev)
+				}
+			case "пока":
+				{
+					return Bye(lastId, ev)
 				}
 			case "измени обращение на":
 				{

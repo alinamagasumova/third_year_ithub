@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,12 +48,12 @@ func PostAdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	outData, err := json.Marshal(inData)
-	if err!=nil {fmt.Println(err)}
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	nc, _ := nats.Connect("nats://95.165.107.100:4222")
-	defer nc.Drain(
-
-	)
+	defer nc.Drain()
 	nc.Publish("ith.bot.ads", outData)
 
 }
